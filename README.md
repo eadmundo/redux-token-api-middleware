@@ -3,6 +3,14 @@
 A redux middleware for making calls to APIs with token-based auth, automatically
 requesting a new token if needed.
 
+**Alpha software - currently under heavy development**
+
+## Installation
+
+	$ npm install redux-token-api-middleware
+	
+## Usage
+
 #### `main.js`
 
 ```javascript

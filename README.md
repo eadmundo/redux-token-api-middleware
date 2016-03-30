@@ -22,7 +22,7 @@ at least an `endpoint` in the payload.
 
 ```javascript
 
-import { CALL_TOKEN_API } from 'redux-api-token-middleware'
+import { CALL_TOKEN_API } from 'redux-token-api-middleware'
 
 export const BASIC_GET_ACTION = 'BASIC_GET_ACTION'
 export const BASIC_POST_ACTION = 'BASIC_POST_ACTION'
@@ -55,7 +55,7 @@ const basicPostAction = () => {
 #### `main.js`
 
 ```javascript
-import { createTokenApiMiddleware } from 'redux-api-token-middleware'
+import { createTokenApiMiddleware } from 'redux-token-api-middleware'
 import { createStore, applyMiddleware } from 'redux'
 
 import reducer from './reducers'

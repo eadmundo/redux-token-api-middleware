@@ -2,7 +2,6 @@ import _ from 'lodash';
 import jwt from 'jsonwebtoken';
 import moment from 'moment-timezone';
 import fetch from 'isomorphic-fetch';
-import {createPromiseThunk} from 'redux-promise-thunk';
 
 export const CALL_TOKEN_API = Symbol('Call API');
 export const TOKEN_STORAGE_KEY = 'reduxMiddlewareAuthToken';

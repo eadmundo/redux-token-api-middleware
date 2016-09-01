@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import jwt from 'jsonwebtoken';
-import moment from 'moment-timezone';
+import moment from 'moment';
 import fetch from 'isomorphic-fetch';
 
 export const CALL_TOKEN_API = Symbol('Call API');
@@ -22,12 +22,12 @@ function checkResponseIsOk(response) {
   });
 }
 
-function responseAsJson(response) {
+function responseToCompletion(response) {
   const contentType = response.headers.get('Content-Type');
   if (contentType && _.startsWith(contentType, 'application/json')) {
     return response.json();
   }
-  return response;
+  return response.text();
 }
 
 function createAsyncAction(type, step, payload) {
@@ -46,8 +46,8 @@ function createAsyncAction(type, step, payload) {
   return action;
 }
 
-function createStartAction(type) {
-  return createAsyncAction(type, 'START');
+function createStartAction(type, payload) {
+  return createAsyncAction(type, 'START', payload);
 }
 
 function createCompletionAction(type, payload) {
@@ -58,26 +58,66 @@ function createFailureAction(type, error) {
   return createAsyncAction(type, 'FAILED', new TypeError(error));
 }
 
-export function storeToken(response) {
+export function storeToken(key, response) {
   let token = response.token;
-  localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(token));
+  localStorage.setItem(key, JSON.stringify(token));
   return token;
 }
 
-export class TokenApiMiddleware {
+export function retrieveToken(key) {
+  let storedValue = localStorage.getItem(key);
+  if (!storedValue) {
+    return null;
+  }
+  try {
+    return JSON.parse(storedValue);
+  }
+  catch (e) {
+    if (e instanceof SyntaxError) {
+      return null;
+    }
+    throw e;
+  }
+}
 
-  constructor(apiAction, store, config={}) {
+export function removeToken(key) {
+  localStorage.removeItem(key);
+}
+
+export function checkTokenFreshness(token) {
+  let tokenPayload = jwt.decode(token);
+  let expiry = moment.unix(tokenPayload.exp);
+  return expiry.diff(moment(), 'seconds') > MIN_TOKEN_LIFESPAN;
+}
+
+export function shouldRequestNewToken() {
+  const token = retrieveToken();
+  return token
+    ? checkTokenFreshness(token)
+    : false;
+}
+
+export class TokenApiService {
+
+  constructor(apiAction, dispatch, config={}) {
     this.apiAction = apiAction;
     this.meta = this.apiAction.meta || {};
-    this.store = store;
+    console.log('dispatch', dispatch)
+    this.dispatch = dispatch;
     this.config = config;
+    // config or default values
     this.checkTokenFreshness = this.configOrDefault('checkTokenFreshness');
     this.retrieveToken = this.configOrDefault('retrieveToken');
+    this.shouldRequestNewToken = this.configOrDefault('shouldRequestNewToken');
     this.storeToken = this.configOrDefault('storeToken');
     this.addTokenToRequest = this.configOrDefault('addTokenToRequest');
     this.refreshAction = this.configOrNotImplemented('refreshAction');
     this.tokenStorageKey = this.config.tokenStorageKey || TOKEN_STORAGE_KEY;
     this.minTokenLifespan = this.config.minTokenLifespan || MIN_TOKEN_LIFESPAN;
+
+    // bind where needed
+    this.storeToken = this.storeToken.bind(this, this.tokenStorageKey);
+    this.retrieveToken = this.retrieveToken.bind(this, this.tokenStorageKey);
     // this.failureAction = this.configOrNotImplemented('failureAction');
   }
 
@@ -95,44 +135,30 @@ export class TokenApiMiddleware {
 
   get defaultMethods() {
     return {
-      checkTokenFreshness: (token) => {
-        let tokenPayload = jwt.decode(token);
-        let expiry = moment.unix(tokenPayload.exp);
-        return expiry.diff(moment.tz('UTC'), 'seconds') > this.minTokenLifespan;
-      },
-      retrieveToken: (key) => {
-        let storedValue = localStorage.getItem(key);
-        return storedValue
-          ? JSON.parse(storedValue)
-          : null;
-      },
+      checkTokenFreshness,
+      retrieveToken,
       storeToken,
-      addTokenToRequest: (headers, token) => {
-        return Object.assign({
-          "Authentication": `Bearer ${token}`
-        }, headers);
-      }
+      addTokenToRequest: this.defaultAddTokenToRequest
     }
   }
 
   completeApiRequest(type, finalResponse) {
-    this.store.dispatch(createCompletionAction(
+    this.dispatch(createCompletionAction(
       type, finalResponse
     ));
   }
 
   catchApiRequestError(type, error) {
-    this.store.dispatch(createFailureAction(type, error));
+    this.dispatch(createFailureAction(type, error));
   }
 
   apiRequest(fetchArgs, action) {
     const meta = action.meta || {};
-    const store = this.store;
     const completeApiRequest = this.completeApiRequest.bind(this, action.type);
     const catchApiRequestError = this.catchApiRequestError.bind(this, action.type);
     return fetch.apply(this, fetchArgs)
       .then(checkResponseIsOk)
-      .then(responseAsJson)
+      .then(responseToCompletion)
       .then(meta.responseHandler)
       .then(completeApiRequest)
       .catch(catchApiRequestError);
@@ -142,15 +168,19 @@ export class TokenApiMiddleware {
     return () => {
       return fetch.apply(null, fetchArgs)
         .then(checkResponseIsOk)
-        .then(responseAsJson);
+        .then(responseToCompletion);
     };
   }
 
   apiCallFromAction(action, token=null) {
+    console.log(action, token);
     const apiFetchArgs = this.getApiFetchArgsFromActionPayload(
-      action.payload, token, this.meta.authenticate
+      action.payload, token
     );
-    this.store.dispatch(createStartAction(action.type));
+    console.log('apiFetchArgs');
+    console.log(apiFetchArgs);
+    console.log(this);
+    this.dispatch(createStartAction(action.type, action.payload));
     this.apiRequest(apiFetchArgs, action, this.store);
   }
 
@@ -164,7 +194,7 @@ export class TokenApiMiddleware {
     });
     const completeApiRequest = this.completeApiRequest.bind(this, action.type);
     const catchApiRequestError = this.catchApiRequestError.bind(this, action.type);
-    this.store.dispatch(createStartAction(action.type));
+    this.dispatch(createStartAction(action.type, action.payload));
     Promise.all(promises)
       .then(meta.responseHandler)
       .then(completeApiRequest)
@@ -182,18 +212,21 @@ export class TokenApiMiddleware {
   }
 
   get token() {
-    return this.retrieveToken(TOKEN_STORAGE_KEY);
+    return this.retrieveToken();
   }
 
-  get shouldRequestNewToken() {
-    return this.token
-      ? this.checkTokenFreshness(this.token)
-      : false;
+  defaultAddTokenToRequest(headers, endpoint, body, token) {
+    return {
+      headers: Object.assign({
+        Authorization: `JWT ${token}`
+      }, headers),
+      endpoint,
+      body
+    }
   }
 
   getApiFetchArgsFromActionPayload(payload, token=null, authenticate=true) {
-    let {headers, method} = payload;
-    const {endpoint, body, credentials} = payload;
+    let { headers, endpoint, method, body, credentials } = payload;
     if (_.isUndefined(method)) {
       method = 'GET';
     }
@@ -201,7 +234,12 @@ export class TokenApiMiddleware {
       'Content-Type': 'application/json'
     }, headers);
     if (token && authenticate) {
-      headers = this.addTokenToRequest(headers, token);
+      console.log('token & authenticate');
+      (
+        { headers, endpoint, body } = this.addTokenToRequest(
+          headers, endpoint, body, token
+        )
+      );
     }
     return [
       endpoint, _.omitBy({method, body, credentials, headers}, _.isUndefined)
@@ -220,22 +258,35 @@ export class TokenApiMiddleware {
       );
       fetch.apply(null, refreshArgs)
         .then(checkResponseIsOk)
-        .then(responseAsJson)
+        .then(responseToCompletion)
         .then(this.storeToken)
         .then(token => {
           this.curriedApiCallMethod(token);
         })
         .catch(error => {
-          this.store.dispatch(createFailureAction(this.apiAction.type, error));
+          this.dispatch(createFailureAction(this.apiAction.type, error));
         });
     } else {
+      console.log('no refresh');
+      console.log(this.token);
       this.curriedApiCallMethod(this.token);
     }
   }
 
 }
 
+export function actionAsPromise(action, dispatch, config) {
+  console.log('actionAsPromise', dispatch)
+  const apiAction = action()[CALL_TOKEN_API];
+  if (apiAction) {
+    const tokenApiService = new TokenApiService(apiAction, dispatch, config);
+    return tokenApiService.call();
+  }
+}
+
 export function createTokenApiMiddleware(config={}) {
+
+  console.log('createTokenApiMiddleware');
 
   return store => next => action => {
 
@@ -245,11 +296,13 @@ export function createTokenApiMiddleware(config={}) {
       return next(action);
     }
 
-    const tokenApiMiddleware = new TokenApiMiddleware(
-      apiAction, store, config
+    console.log(apiAction.type);
+
+    const tokenApiService = new TokenApiService(
+      apiAction, store.dispatch, config
     );
 
-    tokenApiMiddleware.call();
+    tokenApiService.call();
 
   }
 

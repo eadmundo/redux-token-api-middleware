@@ -102,7 +102,7 @@ export class TokenApiService {
   constructor(apiAction, dispatch, config={}) {
     this.apiAction = apiAction;
     this.meta = this.apiAction.meta || {};
-    console.log('dispatch', dispatch)
+    // console.log('dispatch', dispatch)
     this.dispatch = dispatch;
     this.config = config;
     // config or default values
@@ -173,15 +173,15 @@ export class TokenApiService {
   }
 
   apiCallFromAction(action, token=null) {
-    console.log(action, token);
+    // console.log(action, token);
     const apiFetchArgs = this.getApiFetchArgsFromActionPayload(
       action.payload, token
     );
-    console.log('apiFetchArgs');
-    console.log(apiFetchArgs);
-    console.log(this);
+    // console.log('apiFetchArgs');
+    // console.log(apiFetchArgs);
+    // console.log(this);
     this.dispatch(createStartAction(action.type, action.payload));
-    this.apiRequest(apiFetchArgs, action, this.store);
+    return this.apiRequest(apiFetchArgs, action, this.store);
   }
 
   multipleApiCallsFromAction(action, token=null) {
@@ -195,7 +195,7 @@ export class TokenApiService {
     const completeApiRequest = this.completeApiRequest.bind(this, action.type);
     const catchApiRequestError = this.catchApiRequestError.bind(this, action.type);
     this.dispatch(createStartAction(action.type, action.payload));
-    Promise.all(promises)
+    return Promise.all(promises)
       .then(meta.responseHandler)
       .then(completeApiRequest)
       .catch(catchApiRequestError);
@@ -234,7 +234,7 @@ export class TokenApiService {
       'Content-Type': 'application/json'
     }, headers);
     if (token && authenticate) {
-      console.log('token & authenticate');
+      // console.log('token & authenticate');
       (
         { headers, endpoint, body } = this.addTokenToRequest(
           headers, endpoint, body, token
@@ -256,7 +256,7 @@ export class TokenApiService {
         this.token,
         refreshApiActionMeta.authenticate
       );
-      fetch.apply(null, refreshArgs)
+      return fetch.apply(null, refreshArgs)
         .then(checkResponseIsOk)
         .then(responseToCompletion)
         .then(this.storeToken)
@@ -267,26 +267,28 @@ export class TokenApiService {
           this.dispatch(createFailureAction(this.apiAction.type, error));
         });
     } else {
-      console.log('no refresh');
-      console.log(this.token);
-      this.curriedApiCallMethod(this.token);
+      // console.log('no refresh');
+      // console.log(this.token);
+      return this.curriedApiCallMethod(this.token);
     }
   }
 
 }
 
 export function actionAsPromise(action, dispatch, config) {
-  console.log('actionAsPromise', dispatch)
+  // console.log('actionAsPromise', dispatch)
   const apiAction = action()[CALL_TOKEN_API];
   if (apiAction) {
     const tokenApiService = new TokenApiService(apiAction, dispatch, config);
     return tokenApiService.call();
+  } else {
+    return Promise.reject('not an API action!')
   }
 }
 
 export function createTokenApiMiddleware(config={}) {
 
-  console.log('createTokenApiMiddleware');
+  // console.log('createTokenApiMiddleware');
 
   return store => next => action => {
 
@@ -296,7 +298,7 @@ export function createTokenApiMiddleware(config={}) {
       return next(action);
     }
 
-    console.log(apiAction.type);
+    // console.log(apiAction.type);
 
     const tokenApiService = new TokenApiService(
       apiAction, store.dispatch, config

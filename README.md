@@ -123,10 +123,11 @@ const config = {
     let expiry = moment.unix(tokenPayload.exp);
     return expiry.diff(moment(), 'seconds') > MIN_TOKEN_LIFESPAN;
   },
-  shouldRequestNewToken: function checkTokenFreshness(token) {
-    let tokenPayload = jwt.decode(token);
-    let expiry = moment.unix(tokenPayload.exp);
-    return expiry.diff(moment(), 'seconds') > MIN_TOKEN_LIFESPAN;
+  shouldRequestNewToken: function shouldRequestNewToken() {
+    const token = retrieveToken();
+    return token
+      ? checkTokenFreshness(token)
+      : false;
   },
   addTokenToRequest: function defaultAddTokenToRequest(headers, endpoint, body, token) {
     return {

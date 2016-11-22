@@ -1,17 +1,17 @@
 import { expect } from 'chai';
-import { TokenApiMiddleware } from '../';
+import { TokenApiService } from '../';
 import jwt from 'jsonwebtoken';
 
-describe('TokenApiMiddleware', () => {
+describe('TokenApiService', () => {
 
-  let tokenApiMiddleware;
+  let tokenApiService;
   let token;
 
   beforeEach(() => {
     token = jwt.sign({ foo: 'bar' }, 'TOPSECRET', {
       expiresIn: '1 day'
     });
-    tokenApiMiddleware = new TokenApiMiddleware({}, {}, {
+    tokenApiService = new TokenApiService({}, {}, {
       refreshAction: token => {},
       // failureAction: token => {}
     });
@@ -21,7 +21,7 @@ describe('TokenApiMiddleware', () => {
 
     it('should something', () => {
 
-      let fetchArgs = tokenApiMiddleware.getApiFetchArgsFromActionPayload({
+      let fetchArgs = tokenApiService.getApiFetchArgsFromActionPayload({
         endpoint: 'http://localhost/something',
       }, token);
 
@@ -33,24 +33,24 @@ describe('TokenApiMiddleware', () => {
 
   describe('apiCallMethod', () => {
     it('should be multipleApiCallsFromAction for multiple actions in a payload', () => {
-      tokenApiMiddleware.apiAction = {
+      tokenApiService.apiAction = {
         payload: [
           { type: 'ACTION_1' }, { type: 'ACTION_2' }
         ]
       };
-      expect(tokenApiMiddleware.apiCallMethod).to.eq(
-        tokenApiMiddleware.multipleApiCallsFromAction
+      expect(tokenApiService.apiCallMethod).to.eq(
+        tokenApiService.multipleApiCallsFromAction
       );
     });
 
     it('should be apiCallFromAction for a single action payload', () => {
-      tokenApiMiddleware.apiAction = {
+      tokenApiService.apiAction = {
         payload: {
           type: 'ACTION_1'
         }
       };
-      expect(tokenApiMiddleware.apiCallMethod).to.eq(
-        tokenApiMiddleware.apiCallFromAction
+      expect(tokenApiService.apiCallMethod).to.eq(
+        tokenApiService.apiCallFromAction
       );
     });
   });
@@ -62,7 +62,7 @@ describe('TokenApiMiddleware', () => {
         token = jwt.sign({ foo: 'bar' }, 'TOPSECRET', {
           expiresIn: '1 hour'
         });
-        let freshness = tokenApiMiddleware.checkTokenFreshness(token);
+        let freshness = tokenApiService.checkTokenFreshness(token);
         expect(freshness).to.be.true;
       });
 
@@ -70,7 +70,7 @@ describe('TokenApiMiddleware', () => {
         token = jwt.sign({ foo: 'bar' }, 'TOPSECRET', {
           expiresIn: '1 minute'
         });
-        let freshness = tokenApiMiddleware.checkTokenFreshness(token);
+        let freshness = tokenApiService.checkTokenFreshness(token);
         expect(freshness).to.be.false;
       });
     })

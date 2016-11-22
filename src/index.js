@@ -102,7 +102,6 @@ export class TokenApiService {
   constructor(apiAction, dispatch, config={}) {
     this.apiAction = apiAction;
     this.meta = this.apiAction.meta || {};
-    // console.log('dispatch', dispatch)
     this.dispatch = dispatch;
     this.config = config;
     // config or default values
@@ -173,13 +172,9 @@ export class TokenApiService {
   }
 
   apiCallFromAction(action, token=null) {
-    // console.log(action, token);
     const apiFetchArgs = this.getApiFetchArgsFromActionPayload(
       action.payload, token
     );
-    // console.log('apiFetchArgs');
-    // console.log(apiFetchArgs);
-    // console.log(this);
     this.dispatch(createStartAction(action.type, action.payload));
     return this.apiRequest(apiFetchArgs, action, this.store);
   }
@@ -234,7 +229,6 @@ export class TokenApiService {
       'Content-Type': 'application/json'
     }, headers);
     if (token && authenticate) {
-      // console.log('token & authenticate');
       (
         { headers, endpoint, body } = this.addTokenToRequest(
           headers, endpoint, body, token
@@ -267,16 +261,19 @@ export class TokenApiService {
           this.dispatch(createFailureAction(this.apiAction.type, error));
         });
     } else {
-      // console.log('no refresh');
-      // console.log(this.token);
       return this.curriedApiCallMethod(this.token);
     }
   }
 
 }
 
+export function createApiAction(action) {
+  return {
+    [CALL_TOKEN_API]: action
+  }
+}
+
 export function actionAsPromise(action, dispatch, config) {
-  // console.log('actionAsPromise', dispatch)
   const apiAction = action()[CALL_TOKEN_API];
   if (apiAction) {
     const tokenApiService = new TokenApiService(apiAction, dispatch, config);
@@ -287,25 +284,17 @@ export function actionAsPromise(action, dispatch, config) {
 }
 
 export function createTokenApiMiddleware(config={}) {
-
-  // console.log('createTokenApiMiddleware');
-
   return store => next => action => {
-
     const apiAction = action[CALL_TOKEN_API];
 
     if (apiAction === undefined) {
       return next(action);
     }
 
-    // console.log(apiAction.type);
-
     const tokenApiService = new TokenApiService(
       apiAction, store.dispatch, config
     );
 
     tokenApiService.call();
-
   }
-
 }

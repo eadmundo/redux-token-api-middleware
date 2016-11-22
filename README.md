@@ -15,8 +15,7 @@ endpoints.
 ### API actions
 
 Actions that will be intercepted by the middleware are identified by the symbol
-`CALL_TOKEN_API`, and follow the [Flux Standard Action]() pattern. They must have
-at least an `endpoint` in the payload.
+`CALL_TOKEN_API`, and follow the [Flux Standard Action](https://github.com/acdlite/flux-standard-action) pattern, however they must have a payload and have at least an `endpoint` in the payload.
 
 #### Examples
 
@@ -60,6 +59,18 @@ import { createStore, applyMiddleware } from 'redux'
 
 import reducer from './reducers'
 
+// example refresh token action
+const refreshToken = (token) => {
+  return {
+    [CALL_TOKEN_API]: {
+      type: 'REFRESH_TOKEN',
+      endpoint: 'http://localhost/token',
+      method: 'POST',
+      body: JSON.stringify(token)
+    }
+  }
+}
+
 const config = {
   refreshAction: refreshToken
 }
@@ -70,11 +81,61 @@ const store = createStore(
   reducer,
   applyMiddleware(apiTokenMiddleware)
 )
+```
 
 ## API
 
 #### `createTokenApiMiddleware(config)`
 
-Creates a Redux middleware 
+Creates a Redux middleware to handle API objects.
 
+In the config, you must define at least a `refreshAction` method, which is used by the middleware to attempt to get a fresh token. This should be an API action itself.
+
+Other methods can be passed in via config, but have defaults:
+
+```javascript
+// defaults shown
+const config = {
+  tokenStorageKey: 'reduxMiddlewareAuthToken',
+  minTokenLifespan: 300, // seconds (min remaining lifespan to indicate new token should be requested)
+  storeToken: function storeToken(key, response) {
+    let token = response.token;
+    localStorage.setItem(key, JSON.stringify(token));
+    return token;
+  },
+  retrieveToken: function retrieveToken(key) {
+    let storedValue = localStorage.getItem(key);
+    if (!storedValue) {
+      return null;
+    }
+    try {
+      return JSON.parse(storedValue);
+    }
+    catch (e) {
+      if (e instanceof SyntaxError) {
+        return null;
+      }
+      throw e;
+    }
+  },
+  checkTokenFreshness: function checkTokenFreshness(token) {
+    let tokenPayload = jwt.decode(token);
+    let expiry = moment.unix(tokenPayload.exp);
+    return expiry.diff(moment(), 'seconds') > MIN_TOKEN_LIFESPAN;
+  },
+  shouldRequestNewToken: function checkTokenFreshness(token) {
+    let tokenPayload = jwt.decode(token);
+    let expiry = moment.unix(tokenPayload.exp);
+    return expiry.diff(moment(), 'seconds') > MIN_TOKEN_LIFESPAN;
+  },
+  addTokenToRequest: function defaultAddTokenToRequest(headers, endpoint, body, token) {
+    return {
+      headers: Object.assign({
+        Authorization: `JWT ${token}`
+      }, headers),
+      endpoint,
+      body
+    }
+  }
+}
 ```

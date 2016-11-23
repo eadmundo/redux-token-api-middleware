@@ -241,7 +241,7 @@ export class TokenApiService {
   }
 
   call() {
-    if (this.shouldRequestNewToken) {
+    if (this.shouldRequestNewToken()) {
       const refreshAction = this.refreshAction(this.token);
       const refreshApiAction = refreshAction[CALL_TOKEN_API];
       const refreshApiActionMeta = refreshApiAction.meta || {};

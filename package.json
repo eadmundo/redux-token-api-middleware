@@ -1,6 +1,6 @@
 {
   "name": "redux-token-api-middleware",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Redux middleware for calling APIs with token-based auth",
   "main": "lib/index.js",
   "scripts": {

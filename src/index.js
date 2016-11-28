@@ -145,10 +145,12 @@ export class TokenApiService {
     this.dispatch(createCompletionAction(
       type, finalResponse
     ));
+    return finalResponse;
   }
 
   catchApiRequestError(type, error) {
     this.dispatch(createFailureAction(type, error));
+    return error;
   }
 
   apiRequest(fetchArgs, action) {

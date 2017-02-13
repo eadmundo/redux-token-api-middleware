@@ -31,11 +31,17 @@
   "homepage": "https://github.com/eadmundo/redux-token-api-middleware",
   "license": "MIT",
   "dependencies": {
-    "redux": "^3.3.1",
     "isomorphic-fetch": "^2.2.1",
     "jsonwebtoken": "^5.7.0",
+    "lodash.isarraylikeobject": "^4.2.0",
+    "lodash.isfunction": "^3.0.8",
+    "lodash.isundefined": "^3.0.1",
+    "lodash.map": "^4.6.0",
+    "lodash.omitby": "^4.6.0",
+    "lodash.startswith": "^4.2.1",
     "moment": "^2.12.0",
-    "moment-timezone": "^0.5.2"
+    "moment-timezone": "^0.5.2",
+    "redux": "^3.3.1"
   },
   "devDependencies": {
     "babel-cli": "^6.6.5",

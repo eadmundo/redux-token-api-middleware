@@ -1,4 +1,9 @@
-import _ from 'lodash';
+import startsWith from 'lodash.startswith';
+import map from 'lodash.map';
+import isUndefined from 'lodash.isundefined';
+import isFunction from 'lodash.isfunction';
+import isArrayLikeObject from 'lodash.isarraylikeobject';
+import omitBy from 'lodash.omitby';
 import jwt from 'jsonwebtoken';
 import moment from 'moment';
 import fetch from 'isomorphic-fetch';
@@ -24,7 +29,7 @@ function checkResponseIsOk(response) {
 
 function responseToCompletion(response) {
   const contentType = response.headers.get('Content-Type');
-  if (contentType && _.startsWith(contentType, 'application/json')) {
+  if (contentType && startsWith(contentType, 'application/json')) {
     return response.json();
   }
   return response.text();
@@ -113,7 +118,7 @@ export class TokenApiService {
     this.refreshAction = this.configOrNotImplemented('refreshAction');
     this.tokenStorageKey = this.config.tokenStorageKey || TOKEN_STORAGE_KEY;
     this.minTokenLifespan = this.config.minTokenLifespan || MIN_TOKEN_LIFESPAN;
-
+    this.preProcessRequest = this.config.preProcessRequest;
     // bind where needed
     this.storeToken = this.storeToken.bind(this, this.tokenStorageKey);
     this.retrieveToken = this.retrieveToken.bind(this, this.tokenStorageKey);
@@ -183,7 +188,7 @@ export class TokenApiService {
 
   multipleApiCallsFromAction(action, token=null) {
     const meta = action.meta || {};
-    let promises = _.map(action.payload, (apiAction) => {
+    let promises = map(action.payload, (apiAction) => {
       const apiFetchArgs = this.getApiFetchArgsFromActionPayload(
         apiAction, token
       );
@@ -199,7 +204,7 @@ export class TokenApiService {
   }
 
   get apiCallMethod() {
-    return _.isArrayLikeObject(this.apiAction.payload)
+    return isArrayLikeObject(this.apiAction.payload)
       ? this.multipleApiCallsFromAction
       : this.apiCallFromAction;
   }
@@ -224,7 +229,7 @@ export class TokenApiService {
 
   getApiFetchArgsFromActionPayload(payload, token=null, authenticate=true) {
     let { headers, endpoint, method, body, credentials } = payload;
-    if (_.isUndefined(method)) {
+    if (isUndefined(method)) {
       method = 'GET';
     }
     headers = Object.assign({
@@ -237,8 +242,15 @@ export class TokenApiService {
         )
       );
     }
+    if (isFunction(this.preProcessRequest)) {
+      (
+        { headers, endpoint, body } = this.preProcessRequest(
+          headers, endpoint, body
+        )
+      )
+    }
     return [
-      endpoint, _.omitBy({method, body, credentials, headers}, _.isUndefined)
+      endpoint, omitBy({method, body, credentials, headers}, isUndefined)
     ];
   }
 
@@ -286,7 +298,9 @@ export function actionAsPromise(action, dispatch, config) {
 }
 
 export function createTokenApiMiddleware(config={}) {
+
   return store => next => action => {
+
     const apiAction = action[CALL_TOKEN_API];
 
     if (apiAction === undefined) {

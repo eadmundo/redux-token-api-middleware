@@ -96,6 +96,9 @@ export function checkTokenFreshness(token) {
 }
 
 export function shouldRequestNewToken() {
+  if (!this.refreshToken) {
+    return false;
+  }
   const token = retrieveToken();
   return token
     ? checkTokenFreshness(token)
@@ -115,13 +118,15 @@ export class TokenApiService {
     this.shouldRequestNewToken = this.configOrDefault('shouldRequestNewToken');
     this.storeToken = this.configOrDefault('storeToken');
     this.addTokenToRequest = this.configOrDefault('addTokenToRequest');
-    this.refreshAction = this.configOrNotImplemented('refreshAction');
+    this.refreshAction = this.configOrDefault('refreshAction');
     this.tokenStorageKey = this.config.tokenStorageKey || TOKEN_STORAGE_KEY;
     this.minTokenLifespan = this.config.minTokenLifespan || MIN_TOKEN_LIFESPAN;
     this.preProcessRequest = this.config.preProcessRequest;
+    this.refreshToken = this.config.refreshToken || false;
     // bind where needed
     this.storeToken = this.storeToken.bind(this, this.tokenStorageKey);
     this.retrieveToken = this.retrieveToken.bind(this, this.tokenStorageKey);
+    this.shouldRequestNewToken = this.shouldRequestNewToken.bind(this);
     // this.failureAction = this.configOrNotImplemented('failureAction');
   }
 
@@ -142,6 +147,7 @@ export class TokenApiService {
       checkTokenFreshness,
       retrieveToken,
       storeToken,
+      refreshAction: () => {},
       addTokenToRequest: this.defaultAddTokenToRequest
     }
   }

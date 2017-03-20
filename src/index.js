@@ -148,6 +148,7 @@ export class TokenApiService {
       retrieveToken,
       storeToken,
       refreshAction: () => {},
+      shouldRequestNewToken,
       addTokenToRequest: this.defaultAddTokenToRequest
     }
   }

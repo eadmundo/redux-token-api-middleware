@@ -119,6 +119,7 @@ export class TokenApiService {
     this.storeToken = this.configOrDefault('storeToken');
     this.addTokenToRequest = this.configOrDefault('addTokenToRequest');
     this.refreshAction = this.configOrDefault('refreshAction');
+    this.catchApiRequestError = this.configOrDefault('catchApiRequestError');
     this.tokenStorageKey = this.config.tokenStorageKey || TOKEN_STORAGE_KEY;
     this.minTokenLifespan = this.config.minTokenLifespan || MIN_TOKEN_LIFESPAN;
     this.preProcessRequest = this.config.preProcessRequest;
@@ -149,7 +150,8 @@ export class TokenApiService {
       storeToken,
       refreshAction: () => {},
       shouldRequestNewToken,
-      addTokenToRequest: this.defaultAddTokenToRequest
+      addTokenToRequest: this.defaultAddTokenToRequest,
+      catchApiRequestError: this.defaultCatchApiRequestError
     }
   }
 
@@ -160,7 +162,7 @@ export class TokenApiService {
     return finalResponse;
   }
 
-  catchApiRequestError(type, error) {
+  defaultCatchApiRequestError(type, error) {
     this.dispatch(createFailureAction(type, error));
     return error;
   }

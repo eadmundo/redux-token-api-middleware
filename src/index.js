@@ -120,6 +120,7 @@ export class TokenApiService {
     this.addTokenToRequest = this.configOrDefault('addTokenToRequest');
     this.refreshAction = this.configOrDefault('refreshAction');
     this.catchApiRequestError = this.configOrDefault('catchApiRequestError');
+    this.checkResponseIsOk = this.configOrDefault('checkResponseIsOk');
     this.tokenStorageKey = this.config.tokenStorageKey || TOKEN_STORAGE_KEY;
     this.minTokenLifespan = this.config.minTokenLifespan || MIN_TOKEN_LIFESPAN;
     this.preProcessRequest = this.config.preProcessRequest;
@@ -151,7 +152,8 @@ export class TokenApiService {
       refreshAction: () => {},
       shouldRequestNewToken,
       addTokenToRequest: this.defaultAddTokenToRequest,
-      catchApiRequestError: this.defaultCatchApiRequestError
+      catchApiRequestError: this.defaultCatchApiRequestError,
+      checkResponseIsOk: checkResponseIsOk
     }
   }
 
@@ -163,8 +165,13 @@ export class TokenApiService {
   }
 
   defaultCatchApiRequestError(type, error) {
-    this.dispatch(createFailureAction(type, error));
     return error;
+  }
+
+  catchApiRequestError(type, error) {
+    const fn = this.configOrDefault('catchApiRequestError');
+    this.dispatch(createFailureAction(type, error));
+    fn(type, error);
   }
 
   apiRequest(fetchArgs, action) {
@@ -172,7 +179,7 @@ export class TokenApiService {
     const completeApiRequest = this.completeApiRequest.bind(this, action.type);
     const catchApiRequestError = this.catchApiRequestError.bind(this, action.type);
     return fetch.apply(this, fetchArgs)
-      .then(checkResponseIsOk)
+      .then(this.checkResponseIsOk)
       .then(responseToCompletion)
       .then(meta.responseHandler)
       .then(completeApiRequest)
@@ -274,7 +281,7 @@ export class TokenApiService {
         refreshApiActionMeta.authenticate
       );
       return fetch.apply(null, refreshArgs)
-        .then(checkResponseIsOk)
+        .then(this.checkResponseIsOk)
         .then(responseToCompletion)
         .then(this.storeToken)
         .then(token => {
@@ -320,6 +327,6 @@ export function createTokenApiMiddleware(config={}) {
       apiAction, store.dispatch, config
     );
 
-    tokenApiService.call();
+    return tokenApiService.call();
   }
 }

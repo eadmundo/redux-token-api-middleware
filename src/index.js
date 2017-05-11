@@ -316,11 +316,8 @@ export function createTokenApiMiddleware(config={}) {
 
   return store => next => action => {
 
-    console.log(action, 'tokenApiMiddleware')
-
     const apiAction = action[CALL_TOKEN_API];
 
-    console.log(apiAction)
 
     if (apiAction === undefined) {
       return next(action);

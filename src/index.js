@@ -119,7 +119,6 @@ export class TokenApiService {
     this.storeToken = this.configOrDefault('storeToken');
     this.addTokenToRequest = this.configOrDefault('addTokenToRequest');
     this.refreshAction = this.configOrDefault('refreshAction');
-    this.catchApiRequestError = this.configOrDefault('catchApiRequestError');
     this.checkResponseIsOk = this.configOrDefault('checkResponseIsOk');
     this.tokenStorageKey = this.config.tokenStorageKey || TOKEN_STORAGE_KEY;
     this.minTokenLifespan = this.config.minTokenLifespan || MIN_TOKEN_LIFESPAN;
@@ -317,7 +316,11 @@ export function createTokenApiMiddleware(config={}) {
 
   return store => next => action => {
 
+    console.log(action, 'tokenApiMiddleware')
+
     const apiAction = action[CALL_TOKEN_API];
+
+    console.log(apiAction)
 
     if (apiAction === undefined) {
       return next(action);

@@ -170,7 +170,7 @@ export class TokenApiService {
   catchApiRequestError(type, error) {
     const fn = this.configOrDefault('catchApiRequestError');
     this.dispatch(createFailureAction(type, error));
-    fn(type, error);
+    return fn(type, error);
   }
 
   apiRequest(fetchArgs, action) {

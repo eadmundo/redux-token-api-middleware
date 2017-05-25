@@ -122,12 +122,13 @@ export class TokenApiService {
     this.checkResponseIsOk = this.configOrDefault('checkResponseIsOk');
     this.tokenStorageKey = this.config.tokenStorageKey || TOKEN_STORAGE_KEY;
     this.minTokenLifespan = this.config.minTokenLifespan || MIN_TOKEN_LIFESPAN;
+    this.actionKey = this.config.actionKey || CALL_TOKEN_API;
     this.preProcessRequest = this.config.preProcessRequest;
     this.refreshToken = this.config.refreshToken || false;
+    this.shouldRequestNewToken = this.configOrDefault('shouldRequestNewToken');
     // bind where needed
     this.storeToken = this.storeToken.bind(this, this.tokenStorageKey);
     this.retrieveToken = this.retrieveToken.bind(this, this.tokenStorageKey);
-    this.shouldRequestNewToken = this.shouldRequestNewToken.bind(this);
     // this.failureAction = this.configOrNotImplemented('failureAction');
   }
 
@@ -152,7 +153,7 @@ export class TokenApiService {
       shouldRequestNewToken,
       addTokenToRequest: this.defaultAddTokenToRequest,
       catchApiRequestError: this.defaultCatchApiRequestError,
-      checkResponseIsOk: checkResponseIsOk
+      checkResponseIsOk: checkResponseIsOk,
     }
   }
 
@@ -316,11 +317,13 @@ export function createTokenApiMiddleware(config={}) {
 
   return store => next => action => {
 
-    const apiAction = action[CALL_TOKEN_API];
-
+    let apiAction = action[config.actionKey]
 
     if (apiAction === undefined) {
-      return next(action);
+      if (action[CALL_TOKEN_API] === undefined) {
+        return next(action);
+      }
+      apiAction = action[CALL_TOKEN_API]
     }
 
     const tokenApiService = new TokenApiService(

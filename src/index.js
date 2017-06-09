@@ -304,7 +304,8 @@ export function createApiAction(action) {
 }
 
 export function actionAsPromise(action, dispatch, config) {
-  const apiAction = action()[CALL_TOKEN_API];
+  const actionKey = config.actionKey || CALL_TOKEN_API;
+  const apiAction = action()[actionKey];
   if (apiAction) {
     const tokenApiService = new TokenApiService(apiAction, dispatch, config);
     return tokenApiService.call();

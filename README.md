@@ -28,17 +28,17 @@ export const BASIC_POST_ACTION = 'BASIC_POST_ACTION'
 
 // basic GET
 // method defaults to GET if not provided
-const basicGetAction = () => {
+const basicGetAction = () => ({
   [CALL_TOKEN_API]: {
     type: BASIC_GET_ACTION,
     payload: {
       endpoint: 'http://localhost/foo'
     }
   }
-}
+})
 
 // basic POST
-const basicPostAction = () => {
+const basicPostAction = () => ({
   [CALL_TOKEN_API]: {
     type: BASIC_POST_ACTION,
     payload: {
@@ -46,7 +46,7 @@ const basicPostAction = () => {
       method: 'POST'
     }
   }
-}
+})
 ```
 
 ### Setup
@@ -60,16 +60,14 @@ import { createStore, applyMiddleware } from 'redux'
 import reducer from './reducers'
 
 // example refresh token action
-const refreshToken = (token) => {
-  return {
-    [CALL_TOKEN_API]: {
-      type: 'REFRESH_TOKEN',
-      endpoint: 'http://localhost/token',
-      method: 'POST',
-      body: JSON.stringify(token)
-    }
+const refreshToken = (token) => ({
+  [CALL_TOKEN_API]: {
+    type: 'REFRESH_TOKEN',
+    endpoint: 'http://localhost/token',
+    method: 'POST',
+    body: JSON.stringify(token)
   }
-}
+})
 
 const config = {
   refreshAction: refreshToken
@@ -119,7 +117,7 @@ const config = {
     }
   },
   checkTokenFreshness: function checkTokenFreshness(token) {
-    let tokenPayload = jwt.decode(token);
+    let tokenPayload = jwt_decode(token);
     let expiry = moment.unix(tokenPayload.exp);
     return expiry.diff(moment(), 'seconds') > MIN_TOKEN_LIFESPAN;
   },

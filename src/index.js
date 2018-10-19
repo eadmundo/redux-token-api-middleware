@@ -4,9 +4,9 @@ import isUndefined from 'lodash.isundefined';
 import isFunction from 'lodash.isfunction';
 import isArrayLikeObject from 'lodash.isarraylikeobject';
 import omitBy from 'lodash.omitby';
-import jwt from 'jsonwebtoken';
+import jwt_decode from 'jwt-decode';
 import moment from 'moment';
-import fetch from 'isomorphic-fetch';
+import fetch from 'cross-fetch';
 
 export const CALL_TOKEN_API = Symbol('Call API');
 export const TOKEN_STORAGE_KEY = 'reduxMiddlewareAuthToken';
@@ -90,7 +90,7 @@ export function removeToken(key) {
 }
 
 export function checkTokenFreshness(token) {
-  let tokenPayload = jwt.decode(token);
+  let tokenPayload = jwt_decode(token);
   let expiry = moment.unix(tokenPayload.exp);
   return expiry.diff(moment(), 'seconds') > MIN_TOKEN_LIFESPAN;
 }

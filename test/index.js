@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { TokenApiService } from '../';
 import jwt from 'jsonwebtoken';
+
+import { TokenApiService } from '../';
 
 describe('TokenApiService', () => {
 

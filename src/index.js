@@ -8,7 +8,7 @@ import jwt_decode from 'jwt-decode';
 import moment from 'moment';
 import fetch from 'cross-fetch';
 
-export const CALL_TOKEN_API = Symbol('Call API');
+export const CALL_TOKEN_API = '@@CALL_TOKEN_API';
 export const TOKEN_STORAGE_KEY = 'reduxMiddlewareAuthToken';
 
 const MIN_TOKEN_LIFESPAN = 300;

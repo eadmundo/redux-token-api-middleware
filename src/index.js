@@ -153,7 +153,7 @@ export class TokenApiService {
       shouldRequestNewToken,
       addTokenToRequest: this.defaultAddTokenToRequest,
       catchApiRequestError: this.defaultCatchApiRequestError,
-      checkResponseIsOk: checkResponseIsOk,
+      checkResponseIsOk: checkResponseIsOk
     }
   }
 
@@ -229,8 +229,12 @@ export class TokenApiService {
     return this.apiCallMethod.bind(this, this.apiAction);
   }
 
-  get token() {
-    return this.retrieveToken();
+  async getToken() {
+    const token = this.retrieveToken()
+    if (token instanceof Promise) {
+      return await token;
+    }
+    return token;
   }
 
   defaultAddTokenToRequest(headers, endpoint, body, token) {
@@ -270,14 +274,15 @@ export class TokenApiService {
     ];
   }
 
-  call() {
+  async call() {
+    const token = await this.getToken();
     if (this.shouldRequestNewToken()) {
-      const refreshAction = this.refreshAction(this.token);
+      const refreshAction = this.refreshAction(token);
       const refreshApiAction = refreshAction[CALL_TOKEN_API];
       const refreshApiActionMeta = refreshApiAction.meta || {};
       const refreshArgs = this.getApiFetchArgsFromActionPayload(
         refreshApiAction.payload,
-        this.token,
+        token,
         refreshApiActionMeta.authenticate
       );
       return fetch.apply(null, refreshArgs)
@@ -291,10 +296,9 @@ export class TokenApiService {
           this.dispatch(createFailureAction(this.apiAction.type, error));
         });
     } else {
-      return this.curriedApiCallMethod(this.token);
+      return this.curriedApiCallMethod(token);
     }
   }
-
 }
 
 export function createApiAction(action) {

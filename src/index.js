@@ -112,10 +112,14 @@ export class TokenApiService {
     this.meta = this.apiAction.meta || {};
     this.dispatch = dispatch;
     this.config = config;
+
+    this.defaultHeaders = this.config.defaultHeaders || {
+      'Content-Type': 'application/json'
+    }
+    this.retrieveRefreshToken = this.configOrDefault('retrieveRefreshToken')
     // config or default values
     this.checkTokenFreshness = this.configOrDefault('checkTokenFreshness');
     this.retrieveToken = this.configOrDefault('retrieveToken');
-    this.shouldRequestNewToken = this.configOrDefault('shouldRequestNewToken');
     this.storeToken = this.configOrDefault('storeToken');
     this.addTokenToRequest = this.configOrDefault('addTokenToRequest');
     this.refreshAction = this.configOrDefault('refreshAction');
@@ -129,7 +133,6 @@ export class TokenApiService {
     // bind where needed
     this.storeToken = this.storeToken.bind(this, this.tokenStorageKey);
     this.retrieveToken = this.retrieveToken.bind(this, this.tokenStorageKey);
-    // this.failureAction = this.configOrNotImplemented('failureAction');
   }
 
   configOrDefault(key) {
@@ -150,6 +153,7 @@ export class TokenApiService {
       retrieveToken,
       storeToken,
       refreshAction: () => {},
+      retrieveRefreshToken: () => {},
       shouldRequestNewToken,
       addTokenToRequest: this.defaultAddTokenToRequest,
       catchApiRequestError: this.defaultCatchApiRequestError,
@@ -237,6 +241,14 @@ export class TokenApiService {
     return token;
   }
 
+  async getRefreshToken() {
+    const token = this.retrieveRefreshToken()
+    if (token instanceof Promise) {
+      return await token;
+    }
+    return token;
+  }
+
   defaultAddTokenToRequest(headers, endpoint, body, token) {
     return {
       headers: Object.assign({
@@ -252,9 +264,8 @@ export class TokenApiService {
     if (isUndefined(method)) {
       method = 'GET';
     }
-    headers = Object.assign({
-      'Content-Type': 'application/json'
-    }, headers);
+
+    headers = Object.assign(this.defaultHeaders, headers);
     if (token && authenticate) {
       (
         { headers, endpoint, body } = this.addTokenToRequest(
@@ -269,6 +280,7 @@ export class TokenApiService {
         )
       )
     }
+
     return [
       endpoint, omitBy({method, body, credentials, headers}, isUndefined)
     ];
@@ -276,8 +288,9 @@ export class TokenApiService {
 
   async call() {
     const token = await this.getToken();
-    if (this.shouldRequestNewToken()) {
-      const refreshAction = this.refreshAction(token);
+    if (await this.shouldRequestNewToken()) {
+      const refreshToken = await this.getRefreshToken();
+      const refreshAction = this.refreshAction(refreshToken);
       const refreshApiAction = refreshAction[CALL_TOKEN_API];
       const refreshApiActionMeta = refreshApiAction.meta || {};
       const refreshArgs = this.getApiFetchArgsFromActionPayload(
@@ -285,16 +298,16 @@ export class TokenApiService {
         token,
         refreshApiActionMeta.authenticate
       );
+
       return fetch.apply(null, refreshArgs)
         .then(this.checkResponseIsOk)
         .then(responseToCompletion)
-        .then(this.storeToken)
-        .then(token => {
-          this.curriedApiCallMethod(token);
-        })
+        .then(refreshApiActionMeta.responseHandler)
+        .then(this.curriedApiCallMethod)
         .catch(error => {
           this.dispatch(createFailureAction(this.apiAction.type, error));
         });
+
     } else {
       return this.curriedApiCallMethod(token);
     }

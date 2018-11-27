@@ -35,13 +35,14 @@ function responseToCompletion(response) {
   return response.text();
 }
 
-function createAsyncAction(type, step, payload) {
+function createAsyncAction(type, step, payload, meta = {}) {
   let action = {
     type: `${type}_${step}`,
     payload: payload,
-    meta: {
-      asyncStep: step
-    }
+    meta: Object.assign(
+      meta,
+      { asyncStep: step },
+    )
   };
   if (payload && payload instanceof Error) {
     Object.assign(action.meta, {
@@ -55,8 +56,8 @@ function createStartAction(type, payload) {
   return createAsyncAction(type, 'START', payload);
 }
 
-function createCompletionAction(type, payload) {
-  return createAsyncAction(type, 'COMPLETED', payload);
+function createCompletionAction(type, payload, meta) {
+  return createAsyncAction(type, 'COMPLETED', payload, meta);
 }
 
 function createFailureAction(type, error) {
@@ -163,7 +164,7 @@ export class TokenApiService {
 
   completeApiRequest(type, finalResponse) {
     this.dispatch(createCompletionAction(
-      type, finalResponse
+      type, finalResponse, this.meta,
     ));
     return finalResponse;
   }

@@ -27,10 +27,15 @@ function checkResponseIsOk(response) {
   });
 }
 
-function responseToCompletion(response) {
+async function responseToCompletion(response) {
   const contentType = response.headers.get('Content-Type');
   if (contentType && startsWith(contentType, 'application/json')) {
-    return response.json();
+    const text = await response.text()
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      return text;
+    }
   }
   return response.text();
 }

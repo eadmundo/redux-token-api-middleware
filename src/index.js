@@ -27,10 +27,15 @@ function checkResponseIsOk(response) {
   });
 }
 
-function responseToCompletion(response) {
+async function responseToCompletion(response) {
   const contentType = response.headers.get('Content-Type');
   if (contentType && startsWith(contentType, 'application/json')) {
-    return response.json();
+    const text = await response.text()
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      return text;
+    }
   }
   return response.text();
 }
@@ -179,12 +184,27 @@ export class TokenApiService {
     return fn(type, error);
   }
 
+  preserveHeaderValues(meta, response) {
+    const headersToPreserve = meta.preserveHeaders;
+    if (Array.isArray(headersToPreserve)) {
+      const responseHeaders = response.headers;
+      const preservedHeaders = headersToPreserve.reduce((headers, header) => {
+        headers[header] = responseHeaders.get(header);
+        return headers;
+      }, {});
+      meta.preservedHeaders = preservedHeaders;
+    }
+    return response;
+  }
+
   apiRequest(fetchArgs, action) {
     const meta = action.meta || {};
     const completeApiRequest = this.completeApiRequest.bind(this, action.type);
     const catchApiRequestError = this.catchApiRequestError.bind(this, action.type);
+    const preserveHeaderValues = this.preserveHeaderValues.bind(this, this.meta);
     return fetch.apply(this, fetchArgs)
       .then(this.checkResponseIsOk)
+      .then(preserveHeaderValues)
       .then(responseToCompletion)
       .then(meta.responseHandler)
       .then(completeApiRequest)

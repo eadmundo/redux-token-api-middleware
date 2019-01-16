@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import sinon from 'sinon'
 import jwt from 'jsonwebtoken';
 
 import { TokenApiService } from '../';
@@ -18,18 +19,34 @@ describe('TokenApiService', () => {
     });
   });
 
-  describe('getApiFetchArgsFromActionPayload', () => {
+  // describe('getApiFetchArgsFromActionPayload', () => {
 
-    it('should something', () => {
+  //   it('should something', () => {
 
-      let fetchArgs = tokenApiService.getApiFetchArgsFromActionPayload({
-        endpoint: 'http://localhost/something',
-      }, token);
+  //     let fetchArgs = tokenApiService.getApiFetchArgsFromActionPayload({
+  //       endpoint: 'http://localhost/something',
+  //     }, token);
 
-      console.log(fetchArgs);
+  //     // console.log(fetchArgs);
 
+  //   });
+
+  // });
+
+  describe('preserveHeaderValues', () => {
+    it('should preserve header values into the meta action', () => {
+      const headers = {
+        'x-page': 1,
+        'x-per-page': 10,
+        'x-total': 53
+      };
+      const meta = {
+        preserveHeaders: Object.keys(headers),
+      };
+      // tokenApiService.meta =
+      // tokenApiService.preserveHeaderValues({headers}, meta);
+      tokenApiService.preserveHeaderValues({headers}, meta);
     });
-
   });
 
   describe('apiCallMethod', () => {

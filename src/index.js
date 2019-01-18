@@ -4,6 +4,8 @@ import isUndefined from 'lodash.isundefined';
 import isFunction from 'lodash.isfunction';
 import isArrayLikeObject from 'lodash.isarraylikeobject';
 import omitBy from 'lodash.omitby';
+import curryRight from 'lodash.curryright';
+import identity from 'lodash.identity';
 import jwt_decode from 'jwt-decode';
 import moment from 'moment';
 import fetch from 'cross-fetch';
@@ -111,6 +113,14 @@ export function shouldRequestNewToken() {
     : false;
 }
 
+export function createResponseHandlerWithMeta(meta) {
+  const baseHandler = meta.responseHandler || identity;
+  const handlerToCurry = (response, meta) => (
+    baseHandler(response, meta)
+  );
+  return curryRight(handlerToCurry)(meta);
+}
+
 export class TokenApiService {
 
   constructor(apiAction, dispatch, config={}) {
@@ -206,7 +216,7 @@ export class TokenApiService {
       .then(this.checkResponseIsOk)
       .then(preserveHeaderValues)
       .then(responseToCompletion)
-      .then(meta.responseHandler)
+      .then(createResponseHandlerWithMeta(meta))
       .then(completeApiRequest)
       .catch(catchApiRequestError);
   }
@@ -239,7 +249,7 @@ export class TokenApiService {
     const catchApiRequestError = this.catchApiRequestError.bind(this, action.type);
     this.dispatch(createStartAction(action.type, action.payload));
     return Promise.all(promises)
-      .then(meta.responseHandler)
+      .then(createResponseHandlerWithMeta(meta))
       .then(completeApiRequest)
       .catch(catchApiRequestError);
   }
@@ -323,7 +333,7 @@ export class TokenApiService {
       return fetch.apply(null, refreshArgs)
         .then(this.checkResponseIsOk)
         .then(responseToCompletion)
-        .then(refreshApiActionMeta.responseHandler)
+        .then(createResponseHandlerWithMeta(refreshApiActionMeta))
         .then(this.curriedApiCallMethod)
         .catch(error => {
           this.dispatch(createFailureAction(this.apiAction.type, error));

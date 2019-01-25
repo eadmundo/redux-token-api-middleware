@@ -59,16 +59,16 @@ function createAsyncAction(type, step, payload, meta = {}) {
   return action;
 }
 
-function createStartAction(type, payload) {
-  return createAsyncAction(type, 'START', payload);
+function createStartAction(type, payload, meta) {
+  return createAsyncAction(type, 'START', payload, meta);
 }
 
 function createCompletionAction(type, payload, meta) {
   return createAsyncAction(type, 'COMPLETED', payload, meta);
 }
 
-function createFailureAction(type, error) {
-  return createAsyncAction(type, 'FAILED', new TypeError(error));
+function createFailureAction(type, error, meta) {
+  return createAsyncAction(type, 'FAILED', new TypeError(error), meta);
 }
 
 export function storeToken(key, response) {
@@ -190,7 +190,7 @@ export class TokenApiService {
 
   catchApiRequestError(type, error) {
     const fn = this.configOrDefault('catchApiRequestError');
-    this.dispatch(createFailureAction(type, error));
+    this.dispatch(createFailureAction(type, error, this.meta));
     return fn(type, error);
   }
 
@@ -233,7 +233,7 @@ export class TokenApiService {
     const apiFetchArgs = this.getApiFetchArgsFromActionPayload(
       action.payload, token
     );
-    this.dispatch(createStartAction(action.type, action.payload));
+    this.dispatch(createStartAction(action.type, action.payload, this.meta));
     return this.apiRequest(apiFetchArgs, action, this.store);
   }
 
@@ -247,7 +247,7 @@ export class TokenApiService {
     });
     const completeApiRequest = this.completeApiRequest.bind(this, action.type);
     const catchApiRequestError = this.catchApiRequestError.bind(this, action.type);
-    this.dispatch(createStartAction(action.type, action.payload));
+    this.dispatch(createStartAction(action.type, action.payload, this.meta));
     return Promise.all(promises)
       .then(createResponseHandlerWithMeta(meta))
       .then(completeApiRequest)
@@ -336,7 +336,7 @@ export class TokenApiService {
         .then(createResponseHandlerWithMeta(refreshApiActionMeta))
         .then(this.curriedApiCallMethod)
         .catch(error => {
-          this.dispatch(createFailureAction(this.apiAction.type, error));
+          this.dispatch(createFailureAction(this.apiAction.type, error, this.meta));
         });
 
     } else {

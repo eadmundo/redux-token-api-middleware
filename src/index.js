@@ -230,8 +230,10 @@ export class TokenApiService {
   }
 
   apiCallFromAction(action, token=null) {
+    const { meta } = action;
+    const authenticate = meta.authenticate || true;
     const apiFetchArgs = this.getApiFetchArgsFromActionPayload(
-      action.payload, token
+      action.payload, token, authenticate,
     );
     this.dispatch(createStartAction(action.type, action.payload, this.meta));
     return this.apiRequest(apiFetchArgs, action, this.store);

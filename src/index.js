@@ -43,13 +43,7 @@ async function responseToCompletion(response) {
   return response.text();
 }
 
-const ASYNC_OPTIMIST_MAP = {
-  START: 'BEGIN',
-  COMPLETED: 'COMMIT',
-  FAILED: 'REVERT',
-};
-
-export function createAsyncAction(type, step, payload, meta = {}) {
+function createAsyncAction(type, step, payload, meta = {}) {
   let action = {
     type: `${type}_${step}`,
     payload: payload,
@@ -61,15 +55,6 @@ export function createAsyncAction(type, step, payload, meta = {}) {
   if (payload && payload instanceof Error) {
     Object.assign(action.meta, {
       error: true
-    });
-  }
-  const { optimistId } = meta;
-  if (optimistId !== undefined) {
-    Object.assign(action, {
-      optimist: {
-        type: ASYNC_OPTIMIST_MAP[step],
-        id: optimistId,
-      }
     });
   }
   return action;
@@ -314,7 +299,7 @@ export class TokenApiService {
     }
 
     headers = Object.assign(this.defaultHeaders, headers);
-    console.log('authenticate?', authenticate);
+
     if (token && authenticate) {
       (
         { headers, endpoint, body } = this.addTokenToRequest(

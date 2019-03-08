@@ -1,5 +1,6 @@
 import startsWith from 'lodash.startswith';
 import map from 'lodash.map';
+import get from 'lodash.get';
 import isUndefined from 'lodash.isundefined';
 import isFunction from 'lodash.isfunction';
 import isArrayLikeObject from 'lodash.isarraylikeobject';
@@ -245,8 +246,9 @@ export class TokenApiService {
   }
 
   apiCallFromAction(action, token=null) {
+    const authenticate = get(this.meta, 'authenticate', true);
     const apiFetchArgs = this.getApiFetchArgsFromActionPayload(
-      action.payload, token
+      action.payload, token, authenticate,
     );
     this.dispatch(createStartAction(action.type, action.payload, this.meta));
     return this.apiRequest(apiFetchArgs, action, this.store);
@@ -312,6 +314,7 @@ export class TokenApiService {
     }
 
     headers = Object.assign(this.defaultHeaders, headers);
+    console.log('authenticate?', authenticate);
     if (token && authenticate) {
       (
         { headers, endpoint, body } = this.addTokenToRequest(

@@ -30,6 +30,7 @@
     "cross-fetch": "^2.2.2",
     "jwt-decode": "^2.2.0",
     "lodash.curryright": "^4.1.1",
+    "lodash.get": "^4.4.2",
     "lodash.identity": "^3.0.0",
     "lodash.isarraylikeobject": "^4.2.0",
     "lodash.isfunction": "^3.0.8",

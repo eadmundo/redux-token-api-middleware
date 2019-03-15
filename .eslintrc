@@ -3,8 +3,30 @@
   "env": {
     "browser": true,
     "node": true,
-    "es6": true
+    "es6": true,
+    "mocha": true
   },
-
-  "parser": "babel-eslint"
+  "parser": "babel-eslint",
+  "plugins": ["import"],
+  "rules": {
+    "comma-dangle": ["error", "always-multiline"],
+    "function-paren-newline": [
+      "error",
+      "consistent"
+    ],
+    "import/default": "error",
+    "import/named": "error",
+    "import/no-cycle": "error",
+    "import/no-duplicates": "error",
+    "import/first": "error",
+    "import/no-self-import": "error",
+    "import/no-unresolved": "error",
+    "import/no-useless-path-segments": "error",
+    "prefer-arrow-callback": "error",
+    "prefer-const": ["error", {
+      "destructuring": "all"
+    }],
+    "quotes": ["error", "single"],
+    "semi": ["error", "always"]
+  }
 }

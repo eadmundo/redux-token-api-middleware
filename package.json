@@ -8,7 +8,7 @@
     "build": "rimraf lib && babel src --out-dir lib",
     "build:watch": "watch 'npm run build' ./src/",
     "prepublish": "npm run build",
-    "test": "mocha --require @babel/register --require @babel/polyfill --recursive ./test"
+    "test": "mocha --require @babel/register --require @babel/polyfill './src/**/*.test.js' --recursive"
   },
   "keywords": [
     "javascript",
@@ -49,7 +49,10 @@
     "@babel/polyfill": "^7.0.0",
     "@babel/preset-env": "^7.2.0",
     "@babel/register": "^7.0.0",
+    "babel-eslint": "^10.0.1",
     "chai": "^4.2.0",
+    "eslint": "^5.15.1",
+    "eslint-plugin-import": "^2.16.0",
     "jsonwebtoken": "^8.4.0",
     "mocha": "^5.2.0",
     "react": "^16.6.3",

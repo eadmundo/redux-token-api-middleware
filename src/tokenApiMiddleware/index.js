@@ -1,6 +1,9 @@
 export {
   createApiAction,
   createTokenApiMiddleware,
+} from './tokenApiMiddleware';
+
+export {
   removeToken,
   storeToken,
-} from'./tokenApiMiddleware';
+} from './tokenStorage';

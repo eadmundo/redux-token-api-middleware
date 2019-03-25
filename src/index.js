@@ -223,14 +223,22 @@ export class TokenApiService {
     return response;
   }
 
+  addStatusCodeToMeta(meta, response) {
+    const { status } = response;
+    meta.statusCode = status;
+    return response;
+  }
+
   apiRequest(fetchArgs, action) {
     const meta = action.meta || {};
     const completeApiRequest = this.completeApiRequest.bind(this, action.type);
     const catchApiRequestError = this.catchApiRequestError.bind(this, action.type);
     const preserveHeaderValues = this.preserveHeaderValues.bind(this, this.meta);
+    const addStatusCodeToMeta = this.addStatusCodeToMeta.bind(this, this.meta);
     return fetch.apply(this, fetchArgs)
       .then(this.checkResponseIsOk)
       .then(preserveHeaderValues)
+      .then(addStatusCodeToMeta)
       .then(responseToCompletion)
       .then(createResponseHandlerWithMeta(meta))
       .then(completeApiRequest)

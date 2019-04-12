@@ -321,7 +321,7 @@ export class TokenApiService {
       method = 'GET';
     }
 
-    headers = Object.assign(this.defaultHeaders, headers);
+    headers = Object.assign({}, this.defaultHeaders, headers);
 
     if (token && authenticate) {
       (

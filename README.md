@@ -1,7 +1,5 @@
 # redux-token-api-middleware
 
-**Alpha software - currently under heavy development**
-
 A redux middleware for making calls to APIs with token-based auth, automatically
 requesting a new token if needed. Actions can be calls to single or multiple API
 endpoints.

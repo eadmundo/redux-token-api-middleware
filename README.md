@@ -16,7 +16,7 @@ Actions that will be intercepted by the middleware are identified by the symbol
 `CALL_TOKEN_API`, and follow the [Flux Standard Action](https://github.com/acdlite/flux-standard-action) pattern, however they must have a payload and have at least an `endpoint` in the payload.
 
 #### `action.meta`:
-  - `preserveHeaders`: an array of headers to be preserved in the `meta.preservedHeaders` field of the completed action,
+  - `preserveHeaders`: an array of headers to be preserved in the `meta.preservedHeaders` field of the completed action.
   - `optimistId`: a unique ID that will activate [redux-optimist](https://github.com/ForbesLindesay/redux-optimist) compatibility.
 
 #### Examples
